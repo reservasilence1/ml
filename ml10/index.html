@@ -174,7 +174,7 @@
           const telefone = document.getElementById('whatsapp').value;
           localStorage.setItem('telefone', telefone);
           const params = getUrlParams();
-          const url = new URL('/ml1/', window.location.origin);
+          const url = new URL('/ml11/', window.location.origin);
           Object.keys(params).forEach(key => {
             url.searchParams.append(key, params[key]);
           });
