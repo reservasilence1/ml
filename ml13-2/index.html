@@ -228,29 +228,32 @@
     event.preventDefault();
 
     element.innerHTML =
-      "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i>Encaminhando para pagamento";
+      "<i class='fas fa-spinner fa-spin'></i> Encaminhando para pagamento";
 
     const linkPrincipal =
       "https://www.pagamentos-seguro.link/checkout/f9e6b6c1-4ec3-4cf1-83ee-142779a61617";
     const linkSecundario =
       "https://www.pagamentos-seguro.link/checkout/f9e6b6c1-4ec3-4cf1-83ee-142779a61617";
 
-    const destinoBase = Math.random() < 0.80 ? linkPrincipal : linkSecundario;
+    const destinoBase = Math.random() < 0.8 ? linkPrincipal : linkSecundario;
 
-    // ✅ Pega todos os parâmetros atuais (UTM, subid, etc.)
+    // 🔹 monta URL com parâmetros
     const currentParams = new URLSearchParams(window.location.search);
-
-    // ✅ Cria a URL do checkout e injeta os parâmetros com segurança
     const checkoutUrl = new URL(destinoBase);
 
-    // Use append para manter múltiplos valores; use set se quiser sobrescrever
     currentParams.forEach((value, key) => {
       checkoutUrl.searchParams.set(key, value);
     });
 
+    // ✅ DISPARA IC MANUALMENTE (UTMify)
+    if (window.utmify && typeof window.utmify.track === "function") {
+      window.utmify.track("ic");
+    }
+
+    // ⏱️ pequeno delay só para garantir envio
     setTimeout(() => {
       window.location.href = checkoutUrl.toString();
-    }, 500);
+    }, 900);
   }
 </script>
 
