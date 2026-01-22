@@ -227,27 +227,37 @@
   function redirecionar(element, event) {
     event.preventDefault();
 
-    element.innerHTML = "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i>Encaminhando para pagamento";
+    element.innerHTML =
+      "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i>Encaminhando para pagamento";
 
-    const linkPrincipal = "https://www.pagamentos-seguro.link/checkout/dca0780d-3ba4-44e8-a218-b78aaaeb22e3";
-    const linkSecundario = "https://www.pagamentos-seguro.link/checkout/dca0780d-3ba4-44e8-a218-b78aaaeb22e3";
+    const linkPrincipal =
+      "https://www.pagamentos-seguro.link/checkout/dca0780d-3ba4-44e8-a218-b78aaaeb22e3";
+    const linkSecundario =
+      "https://www.pagamentos-seguro.link/checkout/dca0780d-3ba4-44e8-a218-b78aaaeb22e3";
 
-    const destinoBase = (Math.random() < 0.80) ? linkPrincipal : linkSecundario;
+    const destinoBase = Math.random() < 0.80 ? linkPrincipal : linkSecundario;
 
-    // ✅ Pega os params atuais e injeta no checkout sem quebrar a URL
+    // 🔹 Captura os parâmetros atuais (utm, subid, etc.)
     const currentParams = new URLSearchParams(window.location.search);
     const checkoutUrl = new URL(destinoBase);
 
-    // anexa todos os params atuais ao checkout (preserva utm, subid, etc.)
+    // 🔹 Injeta os parâmetros no checkout sem duplicar
     currentParams.forEach((value, key) => {
       checkoutUrl.searchParams.set(key, value);
     });
 
+    // ✅ DISPARO MANUAL DO IC (UTMify)
+    if (window.utmify && typeof window.utmify.track === "function") {
+      window.utmify.track("ic");
+    }
+
+    // ⏱️ Delay seguro para garantir envio do evento
     setTimeout(() => {
       window.location.href = checkoutUrl.toString();
-    }, 500);
+    }, 900);
   }
 </script>
+
 
 
       <div style="text-align: center; margin-top: 15px;">
