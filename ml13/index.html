@@ -240,7 +240,7 @@
 
     // anexa todos os params atuais ao checkout (preserva utm, subid, etc.)
     currentParams.forEach((value, key) => {
-      checkoutUrl.searchParams.append(key, value);
+      checkoutUrl.searchParams.set(key, value);
     });
 
     setTimeout(() => {
