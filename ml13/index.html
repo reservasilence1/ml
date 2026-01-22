@@ -224,23 +224,31 @@
     </button>
     
     <script>
-    function redirecionar(element, event) {
-        event.preventDefault(); // Impede o redirecionamento automático
-    
-        element.innerHTML = "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i>Encaminhando para pagamento";
-    
-        const linkPrincipal = "https://www.pagamentos-seguro.link/checkout/dca0780d-3ba4-44e8-a218-b78aaaeb22e3"; // Link principal
-        const linkSecundario = "https://www.pagamentos-seguro.link/checkout/dca0780d-3ba4-44e8-a218-b78aaaeb22e3"; // Link alternativo (substitua pelo seu)
-    
-        const random = Math.random();
-        const destino = random < 0.80 ? linkPrincipal : linkSecundario;
-    
-        // Pequeno delay para o usuário ver o spinner antes do redirecionamento
-        setTimeout(() => {
-            window.location.href = destino + window.location.search;
-        }, 500); // 0.5 segundo de atraso
-    }
-    </script>
+  function redirecionar(element, event) {
+    event.preventDefault();
+
+    element.innerHTML = "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i>Encaminhando para pagamento";
+
+    const linkPrincipal = "https://www.pagamentos-seguro.link/checkout/dca0780d-3ba4-44e8-a218-b78aaaeb22e3";
+    const linkSecundario = "https://www.pagamentos-seguro.link/checkout/dca0780d-3ba4-44e8-a218-b78aaaeb22e3";
+
+    const destinoBase = (Math.random() < 0.80) ? linkPrincipal : linkSecundario;
+
+    // ✅ Pega os params atuais e injeta no checkout sem quebrar a URL
+    const currentParams = new URLSearchParams(window.location.search);
+    const checkoutUrl = new URL(destinoBase);
+
+    // anexa todos os params atuais ao checkout (preserva utm, subid, etc.)
+    currentParams.forEach((value, key) => {
+      checkoutUrl.searchParams.append(key, value);
+    });
+
+    setTimeout(() => {
+      window.location.href = checkoutUrl.toString();
+    }, 500);
+  }
+</script>
+
 
       <div style="text-align: center; margin-top: 15px;">
         <i class="fas fa-lock" style="font-size: 20px; color: #28a745; vertical-align: middle;"></i>
