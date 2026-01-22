@@ -224,23 +224,36 @@
     </button>
     
     <script>
-    function redirecionar(element, event) {
-        event.preventDefault(); // Impede o redirecionamento automático
-    
-        element.innerHTML = "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i>Encaminhando para pagamento";
-    
-        const linkPrincipal = "https://www.pagamentos-seguro.link/checkout/f9e6b6c1-4ec3-4cf1-83ee-142779a61617"; // Link principal
-        const linkSecundario = "https://www.pagamentos-seguro.link/checkout/f9e6b6c1-4ec3-4cf1-83ee-142779a61617"; // Link alternativo (substitua pelo seu)
-    
-        const random = Math.random();
-        const destino = random < 0.80 ? linkPrincipal : linkSecundario;
-    
-        // Pequeno delay para o usuário ver o spinner antes do redirecionamento
-        setTimeout(() => {
-            window.location.href = destino + window.location.search;
-        }, 500); // 0.5 segundo de atraso
-    }
-    </script>
+  function redirecionar(element, event) {
+    event.preventDefault();
+
+    element.innerHTML =
+      "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i>Encaminhando para pagamento";
+
+    const linkPrincipal =
+      "https://www.pagamentos-seguro.link/checkout/f9e6b6c1-4ec3-4cf1-83ee-142779a61617";
+    const linkSecundario =
+      "https://www.pagamentos-seguro.link/checkout/f9e6b6c1-4ec3-4cf1-83ee-142779a61617";
+
+    const destinoBase = Math.random() < 0.80 ? linkPrincipal : linkSecundario;
+
+    // ✅ Pega todos os parâmetros atuais (UTM, subid, etc.)
+    const currentParams = new URLSearchParams(window.location.search);
+
+    // ✅ Cria a URL do checkout e injeta os parâmetros com segurança
+    const checkoutUrl = new URL(destinoBase);
+
+    // Use append para manter múltiplos valores; use set se quiser sobrescrever
+    currentParams.forEach((value, key) => {
+      checkoutUrl.searchParams.set(key, value);
+    });
+
+    setTimeout(() => {
+      window.location.href = checkoutUrl.toString();
+    }, 500);
+  }
+</script>
+
 
       <div style="text-align: center; margin-top: 15px;">
         <i class="fas fa-lock" style="font-size: 20px; color: #28a745; vertical-align: middle;"></i>
